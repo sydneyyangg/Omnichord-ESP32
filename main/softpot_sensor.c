@@ -1,12 +1,9 @@
-#include <stdio.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_adc/adc_oneshot.h"
+#include "softpot_sensor.h"
 
 // Potentiometer is connected to GPIO 34 (ADC1_CH6)
 #define POT_CHANNEL ADC_CHANNEL_6  // GPIO 34
 
-void app_main(void)
+void softpot_read_task(void *pVParameters)
 {
     // Configure ADC
     adc_oneshot_unit_handle_t adc1_handle;

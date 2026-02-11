@@ -1,3 +1,12 @@
-idf_component_register(SRCS "oneshot_read_main.c"
-                    PRIV_REQUIRES esp_adc
-                    INCLUDE_DIRS ".")
+idf_component_register(
+    SRCS 
+        "main.c"
+        "audio_synthesis.c"
+        "softpot_sensor.c"
+    INCLUDE_DIRS 
+        "."
+        "headers"
+    REQUIRES
+        driver
+        esp_adc
+)
