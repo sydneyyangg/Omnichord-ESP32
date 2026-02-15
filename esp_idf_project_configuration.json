@@ -1,0 +1,26 @@
+{
+  "ESP32": {
+    "build": {
+      "compileArgs": [],
+      "ninjaArgs": [],
+      "buildDirectoryPath": "",
+      "sdkconfigDefaults": [],
+      "sdkconfigFilePath": ""
+    },
+    "env": {},
+    "flashBaudRate": "",
+    "idfTarget": "esp32",
+    "monitorBaudRate": "",
+    "openOCD": {
+      "debugLevel": 3,
+      "configs": [],
+      "args": []
+    },
+    "tasks": {
+      "preBuild": "",
+      "preFlash": "",
+      "postBuild": "",
+      "postFlash": ""
+    }
+  }
+}

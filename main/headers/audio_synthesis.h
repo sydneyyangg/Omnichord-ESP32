@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/i2s_std.h"
+#include "softpot_sensor.h"
 
 void audio_synthesis_task(void *pvParameters);
 

@@ -11,5 +11,7 @@
 #define POT_CHANNEL ADC_CHANNEL_6  // GPIO 34
 
 void softpot_read_task(void *pvParameters);
+void configure_softpot_task();
+extern QueueHandle_t note_queue;
 
 #endif

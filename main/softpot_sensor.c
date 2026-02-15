@@ -1,11 +1,12 @@
+//test this with the softpot sensor and see if it acc works lol, with new setup function
+
 #include "softpot_sensor.h"
 
 QueueHandle_t note_queue;
+adc_oneshot_unit_handle_t adc1_handle;
 
-void softpot_read_task(void *pVParameters)
-{
-    // Configure ADC
-    adc_oneshot_unit_handle_t adc1_handle;
+void configure_softpot_task(){
+// Configure ADC
     adc_oneshot_unit_init_cfg_t init_config = {
         .unit_id = ADC_UNIT_1,
     };
@@ -20,14 +21,17 @@ void softpot_read_task(void *pVParameters)
     
     // Wait 1 second
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    
-    int potValue = 0;
-    int i = 0;
-    int note_index = 0;
-    int last_note = 0;
 
-     // Create a queue capable of containing 10 uint32_t values.
-    note_queue = xQueueCreate( 64, sizeof( int ) );
+     // Create a queue capable of containing 64 int values.
+    note_queue = xQueueCreate(64, sizeof(int));
+}
+
+void softpot_read_task(void *pVParameters)
+{
+    int note_index = 0;
+    int potValue = 0;
+    int last_note = 0;
+    int i = 0;
 
     while(1) {
         // Read potentiometer value
@@ -57,7 +61,7 @@ void softpot_read_task(void *pVParameters)
 
         // Only send if note changed
         if (note_index != last_note) {
-            xQueueSend(note_queue, &note_index, 0);
+            xQueueSendToBack(note_queue, &note_index, 0);
             last_note = note_index;
             printf("Note: %d\n", note_index);
         }
