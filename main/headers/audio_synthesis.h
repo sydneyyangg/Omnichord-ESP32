@@ -11,4 +11,16 @@
 
 void audio_synthesis_task(void *pvParameters);
 
+// make a struct that holds freq, isactive, phase, volume/amp, time
+   typedef struct {
+      float frequency;
+      bool is_active;
+      float phase;
+      float phase_increment;
+      float amplitude; // vol
+      float time_since_press;
+   } Note;
+   
+Note output_notes[7]; 
+
 #endif

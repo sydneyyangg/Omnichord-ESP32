@@ -23,7 +23,7 @@ void configure_softpot_task(){
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
      // Create a queue capable of containing 64 int values.
-    note_queue = xQueueCreate(64, sizeof(int));
+    note_queue = xQueueCreate(10, sizeof(int));
 }
 
 void softpot_read_task(void *pVParameters)
@@ -37,10 +37,6 @@ void softpot_read_task(void *pVParameters)
         // Read potentiometer value
         adc_oneshot_read(adc1_handle, POT_CHANNEL, &potValue);
 
-        // if (i % 20 == 0)
-        //     printf("%d\n", potValue);
-        
-            // Map ADC value to note (adjust ranges for your softpot)
         if (potValue < 10) {
             note_index = -1;  // No touch
         } else if (potValue < 285) {
@@ -59,15 +55,13 @@ void softpot_read_task(void *pVParameters)
             note_index = 6;  // B
         }
 
-        // Only send if note changed
-        if (note_index != last_note) {
+        // Only send if note changed (not for now)
+        //if (note_index != last_note) {
             xQueueSendToBack(note_queue, &note_index, 0);
             last_note = note_index;
             printf("Note: %d\n", note_index);
-        }
+        // }
 
-        //i++;
-        // 100ms delay
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
