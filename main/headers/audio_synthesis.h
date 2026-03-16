@@ -9,6 +9,7 @@
 #include "driver/i2s_std.h"
 #include "softpot_sensor.h"
 
+#define NOTE_COUNT 7
 void audio_synthesis_task(void *pvParameters);
 
 // make a struct that holds freq, isactive, phase, volume/amp, time
@@ -19,6 +20,7 @@ void audio_synthesis_task(void *pvParameters);
       float phase_increment;
       float amplitude; // vol
       float time_since_press;
+      uint32_t start_time;
    } Note;
    
 Note output_notes[7]; 
