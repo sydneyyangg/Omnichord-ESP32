@@ -6,10 +6,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "driver/gpio.h"
 #include "driver/i2s_std.h"
 #include "softpot_sensor.h"
 
 #define NOTE_COUNT 7
+#define SAMPLE_RATE 44100
 void audio_synthesis_task(void *pvParameters);
 
 // make a struct that holds freq, isactive, phase, volume/amp, time
