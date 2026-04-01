@@ -70,38 +70,34 @@ void audio_synthesis_task(void *pvParameters){
                 last_state[i] = current;
             }
             
-            // After debounce period
+            // debounce
             if ((now - last_change[i]) >= pdMS_TO_TICKS(DEBOUNCE_MS)) {
                 if (current != stable_state[i]) {
                     stable_state[i] = current;
                     
-                    // On button PRESS (just went down)
+                    // press
                     if (stable_state[i] == true) {
                         press_start[i] = now;  // Record when pressed
                     }
-                    // On button RELEASE (just went up)
+                    // release
                     else {
                         TickType_t press_duration = now - press_start[i];
                         
-                        // Button 0: long press = Bb major, short = G minor
+                        // long press Bb major, short press G minor
                         if (i == 0) {
                             if (press_duration >= pdMS_TO_TICKS(500)) {
                                 current_chord = 0;
-                                printf("Button 1 LONG PRESS - Bb major (held %lums)\n", press_duration);
                             } else {
                                 current_chord = 1;
-                                printf("Button 1 SHORT PRESS - G minor (held %lums)\n", press_duration);
                             }
                         }
-                        // Button 1: F major
+                        // f major
                         else if (i == 1) {
                             current_chord = 2;
-                            printf("Button 2 - F major\n");
                         }
-                        // Button 2: C minor
+                        //c minor
                         else if (i == 2) {
                             current_chord = 3;
-                            printf("Button 3 - C minor\n");
                         }
                     }
                 }
