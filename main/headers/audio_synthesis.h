@@ -12,37 +12,56 @@
 #include "esp_task_wdt.h"
 
 #define NOTE_COUNT 8
+#define NUM_CHORDS 4
 #define SAMPLE_RATE 44100
+#define DEBOUNCE_MS     50
+#define NUM_BUTTONS     3
+
+static const gpio_num_t BUTTON_PINS[NUM_BUTTONS] = {
+    GPIO_NUM_13,
+    GPIO_NUM_14,
+    GPIO_NUM_23,
+};
+
 void audio_synthesis_task(void *pvParameters);
 void configure_i2s();
 extern i2s_chan_handle_t tx_handle;
 
+// enum Note{
+// NOTE_C4,
+// NOTE_D4,
+// NOTE_E4,
+// NOTE_F4,
+// NOTE_G4,
+// NOTE_A4,
+// NOTE_B4,
+// NOTE_C5
+// };
 
-// make a struct that holds freq, isactive, phase, volume/amp, time
-   typedef struct {
-      float frequency;
-      bool is_active;
-      float phase;
-      float phase_increment;
-      float amplitude; // vol
-      float time_since_press;
-      uint32_t start_time;
-   } Note;
-   
-extern Note output_notes[NOTE_COUNT]; 
-
-enum Note{
-NOTE_C4,
+enum BbMajor{
+NOTE_Bb4,
+NOTE_C5,
 NOTE_D4,
-NOTE_E4,
+NOTE_Eb4,
 NOTE_F4,
 NOTE_G4,
 NOTE_A4,
-NOTE_B4,
-NOTE_C5
+NOTE_Bb5
 };
 
-static const float NOTE_FREQUENCY[NOTE_COUNT] = {261.63f, 293.66f, 329.63f, 349.23f,
-    392.00f, 440.00f, 493.88f, 523.25f};
+// 2D array: [chord][note_index]
+static const float CHORD_FREQUENCIES[NUM_CHORDS][NOTE_COUNT] = {
+    // Chord 0: Bb Major (Bb4 to Bb5)
+    {466.16, 523.25, 587.33, 622.25, 698.46, 783.99, 880.00, 932.33},
+    
+    // Chord 1: G Minor (G4 to G5)
+    {392.00, 440.00, 466.16, 523.25, 587.33, 622.25, 698.46, 783.99},
+    
+    // Chord 2: F Major (F4 to F5)
+    {349.23, 392.00, 440.00, 466.16, 523.25, 587.33, 659.25, 698.46},
+    
+    // Chord 3: C Minor (C4 to C5)
+    {523.25, 587.33, 622.25, 698.46, 783.99, 830.61, 932.33, 1046.50}
+};
 
 #endif

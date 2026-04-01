@@ -45,16 +45,16 @@ void softpot_read_task(void *pVParameters)
         // Same threshold logic as before
         if (potValue < 10) {
             note_index = 0;
-        } else if (potValue < 285) {
+        } else if (potValue < 100) {
             note_index = 1;
-        } else if (potValue < 470) {
-            note_index = 2;
-        } else if (potValue < 655) {
+        } else if (potValue < 250) {
+            note_index = 2; //
+        } else if (potValue < 500) {
             note_index = 3;
-        } else if (potValue < 840) {
+        } else if (potValue < 650) {
             note_index = 4;
         } else if (potValue < 1025) {
-            note_index = 5;
+            note_index = 5; //
         } else if (potValue < 2100) {
             note_index = 6;
         } else {

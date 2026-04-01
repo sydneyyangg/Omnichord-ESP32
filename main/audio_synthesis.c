@@ -1,7 +1,11 @@
 #include "audio_synthesis.h"
 
 i2s_chan_handle_t tx_handle;
-Note output_notes[NOTE_COUNT];
+
+// button states
+bool last_state[NUM_BUTTONS]   = {false, false, false};
+bool stable_state[NUM_BUTTONS] = {false, false, false};
+TickType_t last_change[NUM_BUTTONS] = {0, 0, 0};
 
 void configure_i2s(){
    i2s_chan_config_t chan_cfg = {
@@ -32,34 +36,95 @@ void configure_i2s(){
    
    i2s_channel_init_std_mode(tx_handle, &std_cfg);
    i2s_channel_enable(tx_handle);
-}
 
+   for (int i = 0; i < NUM_BUTTONS; i++) {
+        gpio_config_t io_conf = {
+            .pin_bit_mask = (1ULL << BUTTON_PINS[i]),
+            .mode         = GPIO_MODE_INPUT,
+            .pull_up_en   = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_ENABLE,
+            .intr_type    = GPIO_INTR_DISABLE,
+        };
+        gpio_config(&io_conf);
+    }
+}
 void audio_synthesis_task(void *pvParameters){
     esp_task_wdt_add(NULL);
     
     static float phase = 0;
-    static float freq = 261.63;  // Middle C
-    static float phase_inc = 2 * M_PI * 261.63 / 44100.0;
+    static float freq = 466.16;
+    static float phase_inc = 2 * M_PI * 466.16 / 44100.0;
+    static int current_chord = 0;
+    static TickType_t press_start[NUM_BUTTONS] = {0};  // Track when button was pressed
     
     while(1){
         esp_task_wdt_reset();
+        TickType_t now = xTaskGetTickCount();
         
-        // Simple: just check queue for note changes
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+            bool current = gpio_get_level(BUTTON_PINS[i]);
+            
+            // Detect state change
+            if (current != last_state[i]) {
+                last_change[i] = now;
+                last_state[i] = current;
+            }
+            
+            // After debounce period
+            if ((now - last_change[i]) >= pdMS_TO_TICKS(DEBOUNCE_MS)) {
+                if (current != stable_state[i]) {
+                    stable_state[i] = current;
+                    
+                    // On button PRESS (just went down)
+                    if (stable_state[i] == true) {
+                        press_start[i] = now;  // Record when pressed
+                    }
+                    // On button RELEASE (just went up)
+                    else {
+                        TickType_t press_duration = now - press_start[i];
+                        
+                        // Button 0: long press = Bb major, short = G minor
+                        if (i == 0) {
+                            if (press_duration >= pdMS_TO_TICKS(500)) {
+                                current_chord = 0;
+                                printf("Button 1 LONG PRESS - Bb major (held %lums)\n", press_duration);
+                            } else {
+                                current_chord = 1;
+                                printf("Button 1 SHORT PRESS - G minor (held %lums)\n", press_duration);
+                            }
+                        }
+                        // Button 1: F major
+                        else if (i == 1) {
+                            current_chord = 2;
+                            printf("Button 2 - F major\n");
+                        }
+                        // Button 2: C minor
+                        else if (i == 2) {
+                            current_chord = 3;
+                            printf("Button 3 - C minor\n");
+                        }
+                    }
+                }
+            }
+        }
+        
+        vTaskDelay(pdMS_TO_TICKS(10));
+        
+        // Check queue for note changes
         int note_index;
         static int last_note = -1;
         if (xQueueReceive(note_queue, &note_index, 0) == pdTRUE) {
             if (note_index != last_note && note_index >= 0 && note_index < NOTE_COUNT) {
-                freq = NOTE_FREQUENCY[note_index];
+                freq = CHORD_FREQUENCIES[current_chord][note_index];
                 phase_inc = 2 * M_PI * freq / 44100.0;
-                //phase = 0;  // Reset phase on new note
                 last_note = note_index;
             }
         }
         
-        // Generate simple continuous tone
+        // Generate waveform
         int16_t waveform[512];
         for (int i = 0; i < 512; i++) {
-            waveform[i] = (int16_t)(0.4 * sin(phase) * 32767);
+            waveform[i] = (int16_t)(0.2 * sin(phase) * 32767);
             phase += phase_inc;
             if (phase > 2 * M_PI) phase -= 2 * M_PI;
         }
