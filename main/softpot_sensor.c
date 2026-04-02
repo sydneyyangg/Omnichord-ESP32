@@ -43,17 +43,19 @@ void softpot_read_task(void *pVParameters)
         int potValue = sum / 4;
         
         // Same threshold logic as before
-        if (potValue < 10) {
+        if (potValue < 50) {  // ← Bigger dead zone
+            note_index = -1;
+        } else if (potValue < 200) {  // ← Bigger range for note 0
             note_index = 0;
-        } else if (potValue < 100) {
+        } else if (potValue < 400) {
             note_index = 1;
-        } else if (potValue < 250) {
+        } else if (potValue < 600) {
             note_index = 2; //
-        } else if (potValue < 500) {
+        } else if (potValue < 750) {
             note_index = 3;
-        } else if (potValue < 650) {
+        } else if (potValue < 900) {
             note_index = 4;
-        } else if (potValue < 1025) {
+        } else if (potValue < 1500) {
             note_index = 5; //
         } else if (potValue < 2100) {
             note_index = 6;
@@ -61,9 +63,10 @@ void softpot_read_task(void *pVParameters)
             note_index = 7;
         }
         
-        if (note_index != last_note) {
+        if (note_index != last_note) {  // Remove the "&& note_index >= 0"
             xQueueSendToBack(note_queue, &note_index, 0);
             last_note = note_index;
+            printf("Softpot: %d (ADC: %d)\n", note_index, potValue);  // ADD THIS
         }
         
         vTaskDelay(10 / portTICK_PERIOD_MS);

@@ -27,28 +27,6 @@ void audio_synthesis_task(void *pvParameters);
 void configure_i2s();
 extern i2s_chan_handle_t tx_handle;
 
-// enum Note{
-// NOTE_C4,
-// NOTE_D4,
-// NOTE_E4,
-// NOTE_F4,
-// NOTE_G4,
-// NOTE_A4,
-// NOTE_B4,
-// NOTE_C5
-// };
-
-enum BbMajor{
-NOTE_Bb4,
-NOTE_C5,
-NOTE_D4,
-NOTE_Eb4,
-NOTE_F4,
-NOTE_G4,
-NOTE_A4,
-NOTE_Bb5
-};
-
 // 2D array: [chord][note_index]
 static const float CHORD_FREQUENCIES[NUM_CHORDS][NOTE_COUNT] = {
     // Chord 0: Bb Major (Bb4 to Bb5)
@@ -64,4 +42,5 @@ static const float CHORD_FREQUENCIES[NUM_CHORDS][NOTE_COUNT] = {
     {523.25, 587.33, 622.25, 698.46, 783.99, 830.61, 932.33, 1046.50}
 };
 
+extern const int16_t WAVETABLE[256];
 #endif
