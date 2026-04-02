@@ -86,13 +86,21 @@ void configure_i2s(){
 void audio_synthesis_task(void *pvParameters){
     esp_task_wdt_add(NULL);
 
+    typedef struct {
+        bool active;
+        float phase;
+        float speed;
+        TickType_t start_tick;
+        float amplitude;
+    } synth_voice_t;
+
+    #define MAX_VOICES 6
+    #define VOICE_PEAK_AMPLITUDE 0.18f
+    #define RELEASE_TIME_SEC 2.0f
+
     static int current_chord = 0;
     static TickType_t press_start[NUM_BUTTONS] = {0};  // Track when button was pressed
-    static float wavetable_position = 0.0;  // Current position in wavetable
-    static float playback_speed = 1.0;      // How fast to step through table
-    static float amplitude = 0.0;           // Add amplitude
-    static TickType_t note_start_time = 0;    // Add timer
-    static bool note_active = false;  // Add this flag
+    static synth_voice_t voices[MAX_VOICES] = {0};
     
     while(1){
         esp_task_wdt_reset();
@@ -143,48 +151,75 @@ void audio_synthesis_task(void *pvParameters){
         
         vTaskDelay(pdMS_TO_TICKS(10));
         
-             // Check queue for note changes
-        // In audio task, replace the queue handling section:
+        // Check queue for note changes.
         int note_index;
-        static int last_note = -1;
-        if (xQueueReceive(note_queue, &note_index, 0) == pdTRUE) {
+        while (xQueueReceive(note_queue, &note_index, 0) == pdTRUE) {
             if (note_index >= 0 && note_index < NOTE_COUNT) {
-                // New note touched - restart
                 float freq = CHORD_FREQUENCIES[current_chord][note_index];
-                playback_speed = (freq * 256.0) / 44100.0;
-                amplitude = 0.3;
-                note_start_time = now;
-                note_active = true;
-                last_note = note_index;
+
+                // Find a free voice; if all are busy, steal the quietest one.
+                int voice_idx = -1;
+                float quietest_amp = 999.0f;
+                for (int v = 0; v < MAX_VOICES; v++) {
+                    if (!voices[v].active) {
+                        voice_idx = v;
+                        break;
+                    }
+                    if (voices[v].amplitude < quietest_amp) {
+                        quietest_amp = voices[v].amplitude;
+                        voice_idx = v;
+                    }
+                }
+
+                voices[voice_idx].active = true;
+                voices[voice_idx].phase = 0.0f;
+                voices[voice_idx].speed = (freq * 256.0f) / (float)SAMPLE_RATE;
+                voices[voice_idx].start_tick = now;
+                voices[voice_idx].amplitude = VOICE_PEAK_AMPLITUDE;
             }
         }
    
-        // Update fade EVERY loop (not every 50)
-        if (note_active) {
-            uint32_t elapsed = now - note_start_time;
-            float time_sec = (float)elapsed / (float)configTICK_RATE_HZ;
-                
-            if (time_sec > 2.0) {  // 2 second fade
-                amplitude = 0.0;
-                note_active = false;
-            } else {
-                // Linear fade is simpler and avoids exp()
-                amplitude = 0.3 * (1.0 - time_sec / 2.0);
+        // Update each voice envelope.
+        for (int v = 0; v < MAX_VOICES; v++) {
+            if (voices[v].active) {
+                TickType_t elapsed = now - voices[v].start_tick;
+                float time_sec = (float)elapsed / (float)configTICK_RATE_HZ;
+
+                if (time_sec >= RELEASE_TIME_SEC) {
+                    voices[v].amplitude = 0.0f;
+                    voices[v].active = false;
+                } else {
+                    voices[v].amplitude = VOICE_PEAK_AMPLITUDE * (1.0f - (time_sec / RELEASE_TIME_SEC));
+                }
             }
         }
 
-        // Generate waveform
+        // Generate and mix all active voices.
         int16_t waveform[512];
         for (int i = 0; i < 512; i++) {
-            int index = (int)wavetable_position % 256;
-            
-            // Apply amplitude for fade-out
-            waveform[i] = (int16_t)(amplitude * WAVETABLE[index]);
-            
-            wavetable_position += playback_speed;
-            if (wavetable_position >= 256.0) {
-                wavetable_position -= 256.0;
+            float mix = 0.0f;
+
+            for (int v = 0; v < MAX_VOICES; v++) {
+                if (!voices[v].active) {
+                    continue;
+                }
+
+                int index = ((int)voices[v].phase) & 0xFF;
+                mix += voices[v].amplitude * (float)WAVETABLE[index];
+
+                voices[v].phase += voices[v].speed;
+                if (voices[v].phase >= 256.0f) {
+                    voices[v].phase -= 256.0f;
+                }
             }
+
+            if (mix > 32767.0f) {
+                mix = 32767.0f;
+            } else if (mix < -32768.0f) {
+                mix = -32768.0f;
+            }
+
+            waveform[i] = (int16_t)mix;
         }
         
         size_t bytes_written;
