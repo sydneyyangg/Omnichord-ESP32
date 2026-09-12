@@ -35,8 +35,5 @@ The components were perfboarded, and powered with an esp32. that esp32 was power
 The enclosure was made with laser cut acrylic on the top and bottom panels, which a hole to access the pushbottons and the softpot sensor. 
 The two panels were separated and held together with 3D printed pillars.
 
-**Figure 1:** Audio of the final chord sounds! Chord is changed with a corresponding button. Note: the rightmost button can control two chords, depending on a long or short press.
-![chord1](images/chord1.mp4){width=20% height=20%}
-![chord2](images/chord2.mp4){width=20% height=20%}
-![chord3](images/chord3.mp4){width=20% height=20%}
-![chord4](images/chord4.mp4){width=20% height=20%}
+The videos are available here:
+[here:](https://drive.google.com/drive/folders/1StZ0ep-ZoS5HR6rfUK1RdGIkPp2XnS4G?usp=sharing)
